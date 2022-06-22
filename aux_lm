@@ -139,3 +139,4 @@ lm_assump <- function(fit_model = fitted_model){
   print(all_plots)
   return(output)
 }
+
