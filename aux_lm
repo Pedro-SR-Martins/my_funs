@@ -83,3 +83,59 @@ lm_outCat <- function(fit_model = fitted_model,
                 " outliers should be excluded"), collapse = ''))
   return(output)
 }
+
+# check the residuals assumptions
+lm_assump <- function(fit_model = fitted_model){ 
+  require(tidyverse)
+  require(ggpubr, warn.conflicts = F)
+  df = data.frame(standardized = rstudent(fit_model),
+                  fitted = scale(fit_model$fitted.values))
+  #normality
+  shap = shapiro.test(fit_model$residuals)
+  p_interpret = ifelse(shap$p.value < .05, "non-normal", "normal")
+  w = round(shap$statistic, digits = 2)
+  p = round(shap$p.value, digits = 3)
+  results_shapiro = paste(c("Shapiro-wilk test suggested that the residuals were ", p_interpret,", w = ", w[[1]], " p = ", p[[1]]), collapse = '')
+  hist_res = ggplot(df, aes(x=standardized)) + 
+    geom_density(alpha=.2, fill="lightgray")+
+    geom_histogram(aes(y=..density..),
+                   bins = 30,
+                   colour="black", fill="white")+
+    theme(axis.text.x = element_text(colour="black",size=10),
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          axis.text.y = element_text(colour="black",size=11))+
+    scale_x_continuous(breaks=c(-3,-2,-1,0,1,2,3))+
+    ggtitle("Residuals distribution")
+  #linearity
+  qq_res = ggplot(df, aes(sample=standardized))+stat_qq()+
+    theme(axis.text.x = element_text(colour="black",size=10),
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          axis.text.y = element_text(colour="black",size=11))+
+    stat_qq_line()+
+    scale_y_continuous(breaks=c(-3,-2,-1,0,1,2,3))+
+    scale_x_continuous(breaks=c(-3,-2,-1,0,1,2,3))+
+    ggtitle("Q-Q plot")
+  #homogeneity and homoscedasticity
+  homo_res = ggplot(df, aes(x = fitted, y = standardized))+
+    geom_point()+
+    theme(axis.text.x = element_text(colour="black",size=10),
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          axis.text.y = element_text(colour="black",size=11))+
+    scale_y_continuous(breaks=c(-3,-2,-1,0,1,2,3))+
+    scale_x_continuous(breaks=c(-3,-2,-1,0,1,2,3))+
+    geom_hline(yintercept = 0)+
+    geom_vline(xintercept = 0)+
+    ggtitle("Homogeneity and homoscedasticity")
+  all_plots = ggarrange(hist_res, qq_res, homo_res , 
+                        labels = c("A", "B", "C"),
+                        ncol = 2, nrow = 2)
+  output = list('All plots' = all_plots,
+                'results shapiro' = shap)
+  #suppressWarnings()
+  #print(results_shapiro)
+  print(all_plots)
+  return(output)
+}
