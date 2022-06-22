@@ -132,7 +132,7 @@ lm_assump <- function(fit_model = fitted_model){
   all_plots = ggarrange(hist_res, qq_res, homo_res , 
                         labels = c("A", "B", "C"),
                         ncol = 2, nrow = 2)
-  output = list('All plots' = all_plots,
+  output = list('All plots' = all_plots#,
                 #'results shapiro' = shap
                 )
   #suppressWarnings()
