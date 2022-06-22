@@ -140,3 +140,5 @@ lm_assump <- function(fit_model = fitted_model){
   return(output)
 }
 
+
+
