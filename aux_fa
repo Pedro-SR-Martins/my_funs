@@ -1,0 +1,25 @@
+fitis <- function(fit = fit){
+  fitmeasures(fit, fit.measures = c("chisq.scaled", "df.scaled",
+                                    "pvalue.scaled",
+                                    "cfi.scaled", "tli.scaled",
+                                    "rmsea.scaled",
+                                    "rmsea.ci.lower.scaled",
+                                    "rmsea.ci.upper.scaled",
+                                    "srmr")) %>% 
+    data.frame() %>% 
+    mutate_if(is.numeric, ~round(.x,3)) %>% 
+    rename(Fit = '.') %>% t()
+}
+
+loads <- function(fit = fit){
+  require(tidyverse)
+  require(lavaan)
+  fit %>% standardizedsolution() %>%
+    filter(op == "=~") %>% 
+    select(lhs, rhs, est.std) %>% 
+    pivot_wider(id_cols = rhs, 
+                names_from = lhs, 
+                values_from = est.std) %>% data.frame() %>% 
+    mutate_if(is.numeric, ~round(.x, 2)) %>% 
+    arrange(rhs)
+}
