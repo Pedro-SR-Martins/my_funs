@@ -1,0 +1,85 @@
+# function for a full linear model that haves covariates and factors
+lm_out <- function(fit_model = fitted_model,
+                          out_num = 2){ 
+  require(tidyverse)
+  data <- fit_model[["model"]]
+  #mahalanobis
+  data_mahal <- data %>% select_if(is.numeric)
+  mahal_model <- data_mahal %>% 
+    mahalanobis(.,colMeans(.),cov(.))
+  cut_mahal <- qchisq(1-.001, ncol(data_mahal))
+  df_mahal <- ncol(data_mahal)
+  badmahal <- as.numeric(mahal_model > cut_mahal)  
+  out_mahal <- table(badmahal)
+  message_mahal <- paste(c("the cut off for mahalanobis values considering a p-value of less than .001 was chi-square(", df_mahal, ") = ", cut_mahal), 
+                        collapse = '')
+  #leverage
+  leverage <- hatvalues(fit_model)
+  iv_number <- (length(coef(fit_model)) - 1) #minus the intercept
+  cutleverage <- (2*iv_number+2) / nrow(data)
+  message_leverage = paste(c("the cut off for leverage values was ", cutleverage), collapse = '')
+  badleverage <- as.numeric(leverage > cutleverage)
+  out_leverage <- table(badleverage)
+  #cooks
+  cooks <- cooks.distance(fit_model)
+  cutcooks <- 4 / (nrow(data) - iv_number - 1)
+  message_cooks <- paste(c("the cut off for cooks values was ", cutcooks), collapse = '')
+  badcooks <- as.numeric(cooks > cutcooks)
+  out_cooks <- table(badcooks)
+  #total
+  totalout <- badmahal + badleverage + badcooks
+  total_outliers = table(totalout)
+  #new data
+  noout_data <- subset(data, totalout < out_num)
+  noout_data <- as_tibble(noout_data)
+  excluded_outs <- (NROW(data) - NROW(noout_data))
+  output = list(total_outliers = total_outliers, 
+                #totalout = totalout,
+                message_mahal = message_mahal,
+                message_leverage = message_leverage,
+                message_cooks = message_cooks,
+                out_mahal = out_mahal, 
+                out_cooks = out_cooks, 
+                out_leverage = out_leverage,
+                noout_data = noout_data)
+  print(paste(c("a total of ", excluded_outs, 
+                " outliers should be excluded"), collapse = ''))
+  return(output)
+}
+
+# function for a linear model that only have factors (a.k.a. ANOVAs)
+lm_outCat <- function(fit_model = fitted_model,
+                   out_num = 1){ 
+  require(tidyverse)
+  data <- fit_model[["model"]]
+  #leverage
+  leverage <- hatvalues(fit_model)
+  iv_number <- (length(coef(fit_model)) - 1) #minus the intercept
+  cutleverage <- (2*iv_number+2) / nrow(data)
+  message_leverage = paste(c("the cut off for leverage values was ", cutleverage), collapse = '')
+  badleverage <- as.numeric(leverage > cutleverage)
+  out_leverage <- table(badleverage)
+  #cooks
+  cooks <- cooks.distance(fit_model)
+  cutcooks <- 4 / (nrow(data) - iv_number - 1)
+  message_cooks <- paste(c("the cut off for cooks values was ", cutcooks), collapse = '')
+  badcooks <- as.numeric(cooks > cutcooks)
+  out_cooks <- table(badcooks)
+  #total
+  totalout <- badleverage + badcooks
+  total_outliers = table(totalout)
+  #new data
+  noout_data <- subset(data, totalout < out_num)
+  noout_data <- as_tibble(noout_data)
+  excluded_outs <- (NROW(data) - NROW(noout_data))
+  output = list(total_outliers = total_outliers, 
+                #totalout = totalout,
+                message_leverage = message_leverage,
+                message_cooks = message_cooks,
+                out_cooks = out_cooks, 
+                out_leverage = out_leverage,
+                noout_data = noout_data)
+  print(paste(c("a total of ", excluded_outs, 
+                " outliers should be excluded"), collapse = ''))
+  return(output)
+}
