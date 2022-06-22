@@ -133,9 +133,10 @@ lm_assump <- function(fit_model = fitted_model){
                         labels = c("A", "B", "C"),
                         ncol = 2, nrow = 2)
   output = list('All plots' = all_plots,
-                'results shapiro' = shap)
+                #'results shapiro' = shap
+                )
   #suppressWarnings()
-  #print(results_shapiro)
+  print(results_shapiro)
   print(all_plots)
   return(output)
 }
