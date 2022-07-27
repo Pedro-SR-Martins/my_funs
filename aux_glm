@@ -4,7 +4,7 @@ glm_out <- function(fit_model = fit_model){
   data <- fit_model[["model"]]
   # define crit betas as Belsley et al. 1980
   critbetas <- 2/sqrt(NROW(data))
-  betas <- dfbeta(fit1) %>% 
+  betas <- dfbeta(fit_model) %>% 
     as_tibble() %>% select(-`(Intercept)`) %>% 
     # changing all to absolute values
     mutate(across(everything(), ~abs(.x))) %>% 
@@ -13,7 +13,7 @@ glm_out <- function(fit_model = fit_model){
     mutate(total = rowSums(across(where(is.numeric)))) %>% 
     mutate(total = ifelse(total >= 1, 1,0)) %>% 
     select(total)
-  pbeta <- dfbeta(fit1) %>% 
+  pbeta <- dfbeta(fit_model) %>% 
     as_tibble() %>% select(-`(Intercept)`) %>% 
     rownames_to_column() %>% 
     mutate(rowname = as.numeric(rowname)) %>% 
@@ -35,7 +35,7 @@ glm_out <- function(fit_model = fit_model){
   
   # define crit cooks as Beaujean et al. 2016
   cooks<-data %>% 
-    mutate(cooks_dist_lexical = cooks.distance(fit1)) %>% 
+    mutate(cooks_dist_lexical = cooks.distance(fit_model)) %>% 
     mutate(out_cook = ifelse(cooks_dist_lexical>(4/NROW(.)),1,0))
   noout_data <- cbind(cooks, betas) %>% as_tibble() %>% 
     mutate(total_out = out_cook + total) %>% 
