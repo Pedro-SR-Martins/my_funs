@@ -40,7 +40,7 @@ glm_out <- function(fit_model = fit_model){
   noout_data <- cbind(cooks, betas) %>% as_tibble() %>% 
     mutate(total_out = out_cook + total) %>% 
     filter(total_out < 1) %>% 
-    select(-total_out, -out_cook, -total)
+    select(-total_out, -out_cook, -total, -cooks_dist)
   # user messages
   message_dfbetas = paste(c("the cut off for DFBETAS values was ",
                             critbetas), collapse = '')
