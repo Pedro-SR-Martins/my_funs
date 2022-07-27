@@ -35,8 +35,8 @@ glm_out <- function(fit_model = fit_model){
   
   # define crit cooks as Beaujean et al. 2016
   cooks<-data %>% 
-    mutate(cooks_dist_lexical = cooks.distance(fit_model)) %>% 
-    mutate(out_cook = ifelse(cooks_dist_lexical>(4/NROW(.)),1,0))
+    mutate(cooks_dist = cooks.distance(fit_model)) %>% 
+    mutate(out_cook = ifelse(cooks_dist>(4/NROW(.)),1,0))
   noout_data <- cbind(cooks, betas) %>% as_tibble() %>% 
     mutate(total_out = out_cook + total) %>% 
     filter(total_out < 1) %>% 
