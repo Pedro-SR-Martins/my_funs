@@ -1,0 +1,62 @@
+# tested only for family poisson for now...
+glm_out <- function(fit_model = fit_model){
+  require(tidyverse)
+  data <- fit_model[["model"]]
+  # define crit betas as Belsley et al. 1980
+  critbetas <- 2/sqrt(NROW(data))
+  betas <- dfbeta(fit1) %>% 
+    as_tibble() %>% select(-`(Intercept)`) %>% 
+    # changing all to absolute values
+    mutate(across(everything(), ~abs(.x))) %>% 
+    # possible outliers will be coded as 1
+    mutate(across(everything(), ~ifelse(.x > critbetas,1,0))) %>% 
+    mutate(total = rowSums(across(where(is.numeric)))) %>% 
+    mutate(total = ifelse(total >= 1, 1,0)) %>% 
+    select(total)
+  pbeta <- dfbeta(fit1) %>% 
+    as_tibble() %>% select(-`(Intercept)`) %>% 
+    rownames_to_column() %>% 
+    mutate(rowname = as.numeric(rowname)) %>% 
+    rename(index = rowname) %>% 
+    pivot_longer(cols = c(-index)) %>% 
+    ggplot(aes(x = index, y = value)) + 
+    geom_point()+
+    geom_jitter()+
+    facet_wrap(name~.)+
+    geom_hline(yintercept = critbetas, color = "red")+
+    geom_hline(yintercept = 0-critbetas, color = "red")+
+    theme_classic()+
+    theme(axis.text.x = element_text(colour="black",size=10),
+          panel.background = element_blank(), 
+          axis.line = element_line(colour = "black"),
+          axis.text.y = element_text(colour="black",size=11))+
+    labs(title = "DF betas", 
+         x = "case",y = "b value")
+  
+  # define crit cooks as Beaujean et al. 2016
+  cooks<-data %>% 
+    mutate(cooks_dist_lexical = cooks.distance(fit1)) %>% 
+    mutate(out_cook = ifelse(cooks_dist_lexical>(4/NROW(.)),1,0))
+  noout_data <- cbind(cooks, betas) %>% as_tibble() %>% 
+    mutate(total_out = out_cook + total) %>% 
+    filter(total_out < 1) %>% 
+    select(-total_out, -out_cook, -total)
+  # user messages
+  message_dfbetas = paste(c("the cut off for DFBETAS values was ",
+                            critbetas), collapse = '')
+  
+  message_cooks = paste(c("the cut off for cooks values was ",
+                          4/NROW(data)), collapse = '')
+  # outliers excluded
+  print(paste(c("a total of ", (NROW(data) - NROW(noout_data)), 
+                " outliers should be excluded"), collapse = ''))
+  out_betas <- betas %>% count(total)
+  out_cooks <- cooks %>% count(out_cook)
+  output = list(message_dfbetas = message_dfbetas,
+                message_cooks = message_cooks,
+                out_betas = out_betas, 
+                out_cooks = out_cooks, 
+                noout_data = noout_data,
+                plot_betas = pbeta)
+  return(output)
+}
