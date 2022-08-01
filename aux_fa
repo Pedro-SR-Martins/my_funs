@@ -23,3 +23,20 @@ loads <- function(fit = fit){
     mutate_if(is.numeric, ~round(.x, 2)) %>% 
     arrange(rhs)
 }
+
+
+show_paths <- function(fit = fit){
+  cbind(parameterEstimates(fit)%>% 
+          filter(op =="~"| op == ":=") %>% 
+          select(lhs, rhs, est,ci.lower, ci.upper,
+                 se, pvalue),
+        standardizedsolution(fit)%>% 
+          filter(op =="~"| op == ":=") %>% 
+          select(est.std)) %>% 
+    select(lhs, rhs, 
+           est,ci.lower, ci.upper,
+           se,
+           est.std,
+           pvalue) %>% 
+    mutate_if(is.numeric, ~round(., 3)) 
+}
