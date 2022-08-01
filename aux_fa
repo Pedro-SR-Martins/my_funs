@@ -38,5 +38,6 @@ show_paths <- function(fit = fit){
            se,
            est.std,
            pvalue) %>% 
-    mutate_if(is.numeric, ~round(., 3)) 
+    mutate_if(is.numeric, ~round(., 3))  %>% 
+    arrange(lhs)
 }
