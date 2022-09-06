@@ -1,11 +1,11 @@
 plotInfo <- function(fit_model = x,
                      detail = .1){
-  Theta <- matrix(seq(-4,4, by = detail))
+  Theta <- matrix(seq(-6,6, by = detail))
   Information <- testinfo(fit_model,
-                          Theta = matrix(seq(-4,4, 
+                          Theta = matrix(seq(-6,6, 
                                              by = detail)))
   p1<-plot(fit_model, type = "SE", 
-           theta_lim = c(-4,4), npts = length(Theta))
+           theta_lim = c(-6,6), npts = length(Theta))
   error <- p1[["panel.args"]][[1]][["y"]] %>% 
     data.frame() %>% rename(Error = '.')
   
