@@ -3,6 +3,8 @@ plotInfo <- function(fit_model = x,
                      min_theta = -6,
                      max_theta = 6,
                      breaks_theta = .5){
+   require(mirt)
+   require(tidyverse)
   Theta <- matrix(seq(min_theta,max_theta, by = detail))
   Information <- testinfo(fit_model,
                           Theta = matrix(seq(min_theta,max_theta, 
