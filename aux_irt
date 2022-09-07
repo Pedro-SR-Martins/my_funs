@@ -36,3 +36,5 @@ plotInfo <- function(fit_model = x,
   output <- list(plot = p2, Info_values = Info_values)
   return(output)
 }
+
+
