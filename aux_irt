@@ -1,11 +1,14 @@
 plotInfo <- function(fit_model = x,
-                     detail = .1){
-  Theta <- matrix(seq(-6,6, by = detail))
+                     detail = .1,
+                     min_theta = -6,
+                     max_theta = 6,
+                     breaks_theta = .5){
+  Theta <- matrix(seq(min_theta,max_theta, by = detail))
   Information <- testinfo(fit_model,
-                          Theta = matrix(seq(-6,6, 
+                          Theta = matrix(seq(min_theta,max_theta, 
                                              by = detail)))
   p1<-plot(fit_model, type = "SE", 
-           theta_lim = c(-6,6), npts = length(Theta))
+           theta_lim = c(min_theta,max_theta), npts = length(Theta))
   error <- p1[["panel.args"]][[1]][["y"]] %>% 
     data.frame() %>% rename(Error = '.')
   
@@ -14,6 +17,9 @@ plotInfo <- function(fit_model = x,
     pivot_longer(cols = Information:Error) %>% 
     ggplot(aes(x = Theta, y = value, color = name, linetype = name))+
     geom_line(size = 1)+
+    scale_x_continuous(breaks = seq(from = min_theta, 
+                                    to = max_theta, 
+                                    by = breaks_theta))+
     scale_linetype_manual(values = c("longdash", "solid"))+
     scale_color_manual(values = c("gray80", "black"))+
     labs(y = "Information", color = "Model", linetype = "Model")+
