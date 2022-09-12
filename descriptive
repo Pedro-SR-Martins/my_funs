@@ -20,8 +20,8 @@ descriptiveG <- function(df, group, dv, digits = 3){
                 names_from = stat)
   return(res)
 }
-descriptiveG(base, group = idade, dv = c("bes_global",
-                                       "afetos"))
+
+
 
 descriptive <- function(df, dv, digits = 3){
   require(tidyverse)
