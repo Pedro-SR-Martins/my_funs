@@ -3,8 +3,8 @@ plotInfo <- function(fit_model = x,
                      min_theta = -6,
                      max_theta = 6,
                      breaks_theta = .5){
-   require(mirt)
-   require(tidyverse)
+  require(mirt)
+  require(tidyverse)
   Theta <- matrix(seq(min_theta,max_theta, by = detail))
   Information <- testinfo(fit_model,
                           Theta = matrix(seq(min_theta,max_theta, 
@@ -22,9 +22,11 @@ plotInfo <- function(fit_model = x,
     scale_x_continuous(breaks = seq(from = min_theta, 
                                     to = max_theta, 
                                     by = breaks_theta))+
+    scale_y_continuous(limits = c(0, NA))+
     scale_linetype_manual(values = c("longdash", "solid"))+
     scale_color_manual(values = c("gray80", "black"))+
-    labs(y = expression(I(theta)), color = "Model", linetype = "Model", x = expression(theta))+
+    labs(y = expression(I(theta)), color = "Model", 
+         linetype = "Model", x = expression(theta))+
     theme(axis.text.x = element_text(colour="black",size=12),
           text = element_text(size=16, family = "serif"),
           panel.background = element_blank(), 
@@ -39,6 +41,7 @@ plotInfo <- function(fit_model = x,
   output <- list(plot = p2, Info_values = Info_values)
   return(output)
 }
+
 
 plotTrace <- function(fit_model = fit_model,
                       detail = .01,
