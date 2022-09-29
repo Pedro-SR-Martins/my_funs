@@ -39,4 +39,52 @@ plotInfo <- function(fit_model = x,
   return(output)
 }
 
-
+plotTrace <- function(fit_model = fit_model,
+                      detail = .01,
+                      min_theta = -4,
+                      max_theta = 4,
+                      breaks_theta = 1,
+                      main = 'Item Tracelines',
+                      ncol_plot = 5){
+  probtrace(fit_model,
+            Theta = matrix(seq(min_theta,
+                               max_theta, 
+                               by = detail))) %>% 
+    data.frame() %>% 
+    tibble() %>% 
+    mutate(theta = as.numeric(matrix(seq(min_theta,
+                                         max_theta, 
+                                         by = detail)))) %>% 
+    pivot_longer(cols = c(-theta)) %>% 
+    separate(col = name,
+             sep = ".P.",
+             into = c("item","prob")) %>% 
+    mutate(prob = paste0("P.",prob)) %>% 
+    mutate(item = factor(item)) %>% 
+    pivot_wider(id_cols = c(theta, item),
+                names_from = prob, 
+                values_from = value) %>% 
+    arrange(theta) %>% 
+    ggplot(aes(x = theta,
+               y = P.1, 
+               group = item)) + 
+    geom_line(size = 1,
+              color = "black"
+    ) + 
+    scale_x_continuous(breaks = seq(from = min_theta, 
+                                    to = max_theta, 
+                                    by = breaks_theta))+
+    ggtitle(main) + 
+    xlab(expression(theta)) + 
+    ylab(expression(P(theta))) + 
+    geom_hline(aes(yintercept = 0.5)) + 
+    facet_wrap(item~., , scales = "free_x",
+               ncol = ncol_plot)+
+    coord_capped_cart(bottom='both', left='both')+
+    theme_classic() + 
+    theme(text = element_text(size=16, family = "serif"),
+          axis.text.x=element_text(colour="black", size = 12),
+          axis.text.y=element_text(colour="black"),
+          legend.title=element_blank(), 
+          legend.position = "none")
+}
