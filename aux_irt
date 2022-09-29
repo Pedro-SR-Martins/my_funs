@@ -80,7 +80,6 @@ plotTrace <- function(fit_model = fit_model,
     geom_hline(aes(yintercept = 0.5)) + 
     facet_wrap(item~., , scales = "free_x",
                ncol = ncol_plot)+
-    coord_capped_cart(bottom='both', left='both')+
     theme_classic() + 
     theme(text = element_text(size=16, family = "serif"),
           axis.text.x=element_text(colour="black", size = 12),
