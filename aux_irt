@@ -24,8 +24,9 @@ plotInfo <- function(fit_model = x,
                                     by = breaks_theta))+
     scale_linetype_manual(values = c("longdash", "solid"))+
     scale_color_manual(values = c("gray80", "black"))+
-    labs(y = "Information", color = "Model", linetype = "Model")+
+    labs(y = expression(I(theta)), color = "Model", linetype = "Model", expression(theta))+
     theme(axis.text.x = element_text(colour="black",size=12),
+          text = element_text(size=16, family = "serif"),
           panel.background = element_blank(), 
           legend.key = element_rect(fill = "white"),
           legend.position = "bottom",
