@@ -91,3 +91,11 @@ plotTrace <- function(fit_model = fit_model,
           legend.title=element_blank(), 
           legend.position = "none")
 }
+
+reliability_mirt <- function(fit_model = fit_model){
+  require(mirt)
+  empirical <- fscores(fit_model, full.scores.SE = TRUE) %>% 
+    empirical_rxx(.) %>% round(.,2)
+  marginal <- marginal_rxx(fit_model) %>% round(.,2)
+  return(data.frame(empirical, marginal))
+}
