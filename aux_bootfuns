@@ -1,0 +1,127 @@
+# set functions for boot
+
+pair_mean_boot_fun <- function(data,indices,formula, iv){
+  require(emmeans)
+  require(boot)
+  d <- data[indices, ]
+  rg <- lm(formula, data=d)
+  # change this accordingly
+  em <- emmeans(rg, {{iv}})
+  pint<- contrast(em,"pairwise")
+  post <- summary(pint)$estimate
+  names(post) <- summary(pint)$contrast
+  post
+}
+
+bootmeans_fun <- function(data,indices,formula, iv){
+  d <- data[indices, ]
+  rg <- lm(formula, data=d)
+  # change this accordingly
+  em <- emmeans(rg, {{iv}})
+  means<-data.frame(em)$emmean
+  names(means)<-data.frame(em)[[iv]]
+  means
+}
+
+# overall function
+
+
+bootmeansAnova <- function(fitted_model = fitted_model,
+                           posthoc = posthoc,
+                           bootno = 1000){
+  # packages ---------------
+  
+  require(tidyverse)
+  require(emmeans)
+  require(boot)
+  require(car)
+  require(effectsize)
+  
+  # overal model ----------------------------
+  
+  fit_anova1 <- car::Anova(fitted_model, type = "III") %>% 
+    data.frame() %>% 
+    rownames_to_column(var = "Parameter")
+  eta1 <- effectsize::eta_squared(car::Anova(fitted_model, 
+                                             type = "III"),
+                                  partial = F,ci = F,
+                                  generalized = F) %>% 
+    data.frame()
+  ANOVA_RESULT <- full_join(fit_anova1, eta1) %>% 
+    mutate(across(where(is.numeric), ~round(.x,3)))
+  
+  # classic post hoc -----------------------
+  post <-pairs(contrast(emmeans(fitted_model,
+                                    {{posthoc}})), 
+                   adjust = "tukey") %>% 
+    data.frame()
+  d<-eff_size(contrast(emmeans(fitted_model, 
+                                    {{posthoc}})), 
+                   sigma = sigma(fitted_model),
+                   edf = df.residual(fitted_model)) %>% 
+    data.frame() %>% 
+    select(contrast, effect.size) %>% 
+    rename('Cohen d' = effect.size)
+  POST_HOC <- full_join(post, d) %>% 
+    mutate(across(where(is.numeric), ~round(.x,3)))
+  
+  # bootstrap -------------------------------
+  bootstrapped_means <- boot(data = fitted_model[["model"]],
+                             formula = fitted_model[["call"]][["formula"]] ,
+                             R = bootno, 
+                             iv = posthoc,
+                             statistic = pair_mean_boot_fun)
+  booted_coefs = matrix(ncol = 3, 
+                        nrow = NROW(bootstrapped_means$t0))
+  
+  for(i in 1:NROW(bootstrapped_means$t0)){
+    tmp = boot::boot.ci(bootstrapped_means,
+                        type = "bca", index = i)
+    tmp2 = c(tmp$t0, tmp$bca[,4:5])
+    booted_coefs[i,] = tmp2
+  }
+  
+  rownames(booted_coefs) <- names(bootstrapped_means$t0)
+  
+  
+  colnames(booted_coefs) <- c("Mean difference",
+                              "Lower",
+                              "upper")
+  BOOT_COEFS <- booted_coefs %>% data.frame() %>% 
+    rownames_to_column(var = "Comparison") %>% 
+    mutate(across(where(is.numeric), ~round(.x,2)))
+  
+  
+  # bootstrap means for plot maybe ------
+  est_means <-boot(data = fitted_model[["model"]],
+                   formula = fitted_model[["call"]][["formula"]] ,
+                   R = bootno, 
+                   iv = posthoc,
+                   statistic = bootmeans_fun)
+  
+  means_mat = matrix(ncol = 3, 
+                     nrow = NROW(est_means$t0))
+  
+  for(i in 1:NROW(est_means$t0)){
+    tmp = boot::boot.ci(est_means,
+                        type = "bca", index = i)
+    tmp2 = c(tmp$t0, tmp$bca[,4:5])
+    means_mat[i,] = tmp2
+  }
+  
+  rownames(means_mat) <- names(est_means$t0)
+  
+  
+  colnames(means_mat) <- c("Mean",
+                           "Lower",
+                           "upper")
+  MEANS <- means_mat %>% data.frame() %>% 
+    mutate(across(where(is.numeric), ~round(.x,2)))
+  # output section ----------------------
+  results <- list(ANOVA_RESULT = ANOVA_RESULT,
+                  POST_HOC = POST_HOC,
+                  BOOT_COEFS = BOOT_COEFS,
+                  MEANS = MEANS)
+  
+  return(results)
+}
