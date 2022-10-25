@@ -28,7 +28,7 @@ descriptive <- function(df, dv, digits = 3){
   require(tidyverse)
   res <- df %>% 
     select(all_of(dv)) %>% 
-    summarise(across(across(all_of(dv), list(stat_mean = ~mean(.x, na.rm =T),
+    summarise(across(all_of(dv), list(stat_mean = ~mean(.x, na.rm =T),
                                              stat_sd = ~sd(.x, na.rm =T),
                                              stat_min = ~min(.x, na.rm =T), 
                                              stat_max = ~max(.x, na.rm =T),
@@ -36,8 +36,7 @@ descriptive <- function(df, dv, digits = 3){
                                              stat_n = ~NROW(na.omit(.x)),
                                              stat_shapiro = ~shapiro.test(na.omit(.x))$statistic,
                                              stat_p.value = ~shapiro.test(na.omit(.x))$p.value,
-                                             stat_missing = ~sum(is.na(.x)))))
-              ) %>% 
+                                             stat_missing = ~sum(is.na(.x))))) %>% 
       mutate(across(where(is.numeric), ~round(.x, digits))) %>% 
       pivot_longer(cols = everything()) %>% 
       separate(col = name, into = c("var", "stat"), sep = "_stat_") %>% 
@@ -45,4 +44,5 @@ descriptive <- function(df, dv, digits = 3){
                   values_from = value,
                   names_from = stat)
     return(res)
+  
 }
