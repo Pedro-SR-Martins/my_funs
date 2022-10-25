@@ -45,3 +45,4 @@ descriptive <- function(df, dv, digits = 3){
                   values_from = value,
                   names_from = stat)
     return(res)
+}
