@@ -27,7 +27,7 @@ descriptive <- function(df, dv, digits = 3){
   require(tidyverse)
   res <- df %>% 
     select(all_of(dv)) %>% 
-  summarise(across(dass21_depression_total:dass21_total, list(stat_mean = ~mean(.x, na.rm =T),
+  summarise(across(across(all_of(dv), list(stat_mean = ~mean(.x, na.rm =T),
                                       stat_sd = ~sd(.x, na.rm =T),
                                       stat_min = ~min(.x, na.rm =T), 
                                       stat_max = ~max(.x, na.rm =T),
