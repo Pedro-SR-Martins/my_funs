@@ -39,7 +39,7 @@ glm_out <- function(fit_model = fit_model){
     mutate(out_cook = ifelse(cooks_dist>(4/NROW(.)),1,0))
   noout_data <- cbind(cooks, betas) %>% as_tibble() %>% 
     mutate(total_out = out_cook + total) %>% 
-    filter(total_out < 1) %>% 
+    filter(total_out < 2) %>% # exclude people who met the 2 criteria
     select(-total_out, -out_cook, -total, -cooks_dist)
   # user messages
   message_dfbetas = paste(c("the cut off for DFBETAS values was ",
