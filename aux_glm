@@ -49,7 +49,7 @@ glm_out <- function(fit_model = fit_model){
                           4/NROW(data)), collapse = '')
   # outliers excluded
   print(paste(c("a total of ", (NROW(data) - NROW(noout_data)), 
-                " outliers should be excluded"), collapse = ''))
+                " outliers should be excluded, i.e., cases that met the two criteria"), collapse = ''))
   out_betas <- betas %>% count(total)
   out_cooks <- cooks %>% count(out_cook)
   output = list(message_dfbetas = message_dfbetas,
