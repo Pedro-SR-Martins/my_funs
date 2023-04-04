@@ -17,3 +17,9 @@ source("https://raw.githubusercontent.com/Pedro-SR-Martins/my_funs/main/aux_lm")
 This currently have one function for check for outliers in generalized linear models. It is a convenience function that works similarly to the function for `lm_out`.   For now, the function `glm_out` is very simple and it was only tested for poisson models.  
 It defines cooks distance as [Beaujean et al. 2016](https://scholarworks.umass.edu/cgi/viewcontent.cgi?article=1336&context=pare) and DIFFBETAS as [Belsley et al. 1980](https://onlinelibrary.wiley.com/doi/10.1002/0471725153.ch2)   
 source("https://raw.githubusercontent.com/Pedro-SR-Martins/my_funs/main/aux_glm")  
+
+
+## Functions for bootstraping :repeat_one:
+This link have a couple of functions that serve the purpose of running ANOVA with bootstrap. Having fitted the model using the standard way (i.e., `fit <- lm(y ~ x, data)`) the main function `bootmeansAnova` returns the bootstrapped means for posthoc analysis. It additionally provides a somewhat nice table for reporting the results, also showing effect-sizes (Cohen's d and eta squared) 
+source("https://raw.githubusercontent.com/Pedro-SR-Martins/my_funs/main/aux_bootfuns")
+
