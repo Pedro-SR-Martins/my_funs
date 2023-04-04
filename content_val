@@ -4,6 +4,7 @@ content_val <- function(data = data,
                         itemcode = itemcode,
                         feature = feature){
   # Based on Polit et al. (2007) 10.1002/nur.20199
+  require(tidyverse)
   vals <- data %>% 
     mutate(cat = case_when(value %in% target ~ 1,
                            TRUE ~ 0)) %>% 
