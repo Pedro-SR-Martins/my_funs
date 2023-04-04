@@ -2,13 +2,14 @@ content_val <- function(data = data,
                         target = target,
                         nraters = nraters,
                         itemcode = itemcode,
-                        feature = feature){
+                        feature = feature,
+                        rating = rating){
   # Based on Polit et al. (2007) 10.1002/nur.20199
   require(tidyverse)
   vals <- data %>% 
-    mutate(cat = case_when(value %in% target ~ 1,
+    mutate(cat = case_when({{rating}} %in% target ~ 1,
                            TRUE ~ 0)) %>% 
-    select(-value) %>% 
+    select(-{{rating}}) %>% 
     group_by({{itemcode}}, {{feature}}) %>% 
     count(vars = cat) %>% 
     filter(vars == 1) %>%
