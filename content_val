@@ -1,0 +1,29 @@
+content_val <- function(data = data, 
+                        target = target,
+                        nraters = nraters,
+                        itemcode = itemcode,
+                        feature = feature){
+  # Based on Polit et al. (2007) 10.1002/nur.20199
+  vals <- data %>% 
+    mutate(cat = case_when(value %in% target ~ 1,
+                           TRUE ~ 0)) %>% 
+    select(-value) %>% 
+    group_by({{itemcode}}, {{feature}}) %>% 
+    count(vars = cat) %>% 
+    filter(vars == 1) %>%
+    ungroup() %>% 
+    mutate(cvi = n/nraters,
+           pc = ((factorial(nraters)/factorial(n))*
+                   factorial((nraters-n)))*.5^nraters,
+           k = (cvi - pc)/(1-pc)) %>% 
+    select(-vars, -n) 
+  cvi <- vals %>% 
+    pivot_wider(id_cols = itemcode,
+                names_from = feature, 
+                values_from = c(cvi)) 
+  kappa <- vals %>% 
+    pivot_wider(id_cols = itemcode,
+                names_from = feature, 
+                values_from = c(k)) 
+  return(list(cvi = cvi, kappa = kappa))
+}
