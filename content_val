@@ -19,12 +19,12 @@ content_val <- function(data = data,
            k = (cvi - pc)/(1-pc)) %>% 
     select(-vars, -n) 
   cvi <- vals %>% 
-    pivot_wider(id_cols = itemcode,
-                names_from = feature, 
+    pivot_wider(id_cols = {{itemcode}},
+                names_from = {{feature}}, 
                 values_from = c(cvi)) 
   kappa <- vals %>% 
-    pivot_wider(id_cols = itemcode,
-                names_from = feature, 
+    pivot_wider(id_cols = {{itemcode}},
+                names_from = {{feature}},
                 values_from = c(k)) 
   return(list(cvi = cvi, kappa = kappa))
 }
