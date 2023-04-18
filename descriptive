@@ -1,3 +1,9 @@
+# note: that this function has some bad coding to be updated in the future
+# to use the function, the dv argument have to be a character vector (accepting multiple variables)
+# the group argument HAVE to be the name of the group variable without quotes.
+# descriptive(base, dv = c("notaport"))
+# descriptiveG(base, dv = c("notaport"), group = interessemat)
+
 descriptiveG <- function(df, group, dv, digits = 3){
   require(tidyverse)
   res <- df %>% 
@@ -5,6 +11,7 @@ descriptiveG <- function(df, group, dv, digits = 3){
     group_by({{group}}) %>% 
     summarise(across(all_of(dv), list(stat_mean = ~mean(.x, na.rm =T),
                                       stat_sd = ~sd(.x, na.rm =T),
+                                      stat_se = (~sd(.x, na.rm=T)/sqrt(sum(!is.na(.x)))),
                                       stat_min = ~min(.x, na.rm =T), 
                                       stat_max = ~max(.x, na.rm =T),
                                       stat_median = ~median(.x, na.rm = T),
@@ -29,20 +36,21 @@ descriptive <- function(df, dv, digits = 3){
   res <- df %>% 
     select(all_of(dv)) %>% 
     summarise(across(all_of(dv), list(stat_mean = ~mean(.x, na.rm =T),
-                                             stat_sd = ~sd(.x, na.rm =T),
-                                             stat_min = ~min(.x, na.rm =T), 
-                                             stat_max = ~max(.x, na.rm =T),
-                                             stat_median = ~median(.x, na.rm = T),
-                                             stat_n = ~NROW(na.omit(.x)),
-                                             stat_shapiro = ~shapiro.test(na.omit(.x))$statistic,
-                                             stat_p.value = ~shapiro.test(na.omit(.x))$p.value,
-                                             stat_missing = ~sum(is.na(.x))))) %>% 
-      mutate(across(where(is.numeric), ~round(.x, digits))) %>% 
-      pivot_longer(cols = everything()) %>% 
-      separate(col = name, into = c("var", "stat"), sep = "_stat_") %>% 
-      pivot_wider(id_cols = c(var),
-                  values_from = value,
-                  names_from = stat)
-    return(res)
+                                      stat_sd = ~sd(.x, na.rm =T),
+                                      stat_se = (~sd(.x, na.rm=T)/sqrt(sum(!is.na(.x)))),
+                                      stat_min = ~min(.x, na.rm =T), 
+                                      stat_max = ~max(.x, na.rm =T),
+                                      stat_median = ~median(.x, na.rm = T),
+                                      stat_n = ~NROW(na.omit(.x)),
+                                      stat_shapiro = ~shapiro.test(na.omit(.x))$statistic,
+                                      stat_p.value = ~shapiro.test(na.omit(.x))$p.value,
+                                      stat_missing = ~sum(is.na(.x))))) %>% 
+    mutate(across(where(is.numeric), ~round(.x, digits))) %>% 
+    pivot_longer(cols = everything()) %>% 
+    separate(col = name, into = c("var", "stat"), sep = "_stat_") %>% 
+    pivot_wider(id_cols = c(var),
+                values_from = value,
+                names_from = stat)
+  return(res)
   
 }
