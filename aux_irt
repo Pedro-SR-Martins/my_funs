@@ -125,7 +125,7 @@ plotTracePoly <- function(fit_model = fit_model,
     mutate(item = factor(item)) %>% 
     ggplot(aes(x = theta,
                y = value, 
-               linetype = prob,
+               #linetype = prob,
                
                color = prob)) + 
     geom_line(linewidth = 1) + 
