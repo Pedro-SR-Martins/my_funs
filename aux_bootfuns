@@ -44,7 +44,7 @@ bootmeansAnova <- function(fitted_model = fitted_model,
     rownames_to_column(var = "Parameter")
   eta1 <- effectsize::eta_squared(car::Anova(fitted_model, 
                                              type = "III"),
-                                  partial = F,ci = F,
+                                  partial = F,ci = .95,
                                   generalized = F) %>% 
     data.frame()
   ANOVA_RESULT <- full_join(fit_anova1, eta1) %>% 
