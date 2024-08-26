@@ -142,3 +142,58 @@ lm_assump <- function(fit_model = fitted_model){
 
 
 
+lm_boot_coef <- function(fitted_model = fitted_model, R = 1000){
+  if (!requireNamespace("pacman", quietly = TRUE)) {
+    install.packages("pacman")
+  }
+  if (!requireNamespace("tidyverse", quietly = TRUE)) {
+    install.packages("tidyverse")
+  }
+  if (!requireNamespace("easystats", quietly = TRUE)) {
+    install.packages("easystats")
+  }
+  if (!requireNamespace("boot", quietly = TRUE)) {
+    install.packages("boot")
+  }
+  if (!requireNamespace("knitr", quietly = TRUE)) {
+    install.packages("knitr")
+  }
+  if (!requireNamespace("kableExtra", quietly = TRUE)) {
+    install.packages("kableExtra")
+  }
+  if (!requireNamespace("jtools", quietly = TRUE)) {
+    install.packages("jtools")
+  }
+  
+  if (!requireNamespace("car", quietly = TRUE)) {
+    install.packages("car")
+  }
+  pacman::p_load(tidyverse, easystats, boot,knitr,car)
+  outjtools <- jtools::summ(fitted_model, 
+     digits = 3,
+     scale = T)
+  cis <- Confint(Boot(object = fitted_model, 
+             R = R,
+             method = c("case",
+                        "residual")), 
+        level=.95, type="bca")
+
+
+  betas <- standardize_parameters(fitted_model)
+  return(cbind(outjtools$coeftable,
+      data.frame(cis),
+      data.frame(betas)) %>% 
+  select(Parameter, Estimate, X2.5.., X97.5..,`t val.`, p, Std_Coefficient) %>% 
+  rename("b" = "Estimate",
+         "Lower" = "X2.5..",
+         "Upper" = "X97.5..",
+         "t" = "t val.",
+         "Beta" = "Std_Coefficient") %>% 
+  mutate(p = case_when(p < .001 ~ "< .001", TRUE ~ as.character(round(p,3)))) %>% 
+  mutate(across(where(is.numeric), ~ round(.x, 2))) %>% 
+  kable(., align = "c", row.names = F) %>% 
+  kableExtra::footnote( alphabet = c(paste("adj R² = ",round(r2(fitted_model)[["R2_adjusted"]],3),
+                                           "; N = ", NROW(fitted_model[["model"]])))))
+
+}
+
