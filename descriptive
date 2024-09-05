@@ -1,3 +1,45 @@
+
+
+describedf <- function(df, digits = 3) {
+  if (is_grouped_df(df)) {
+    group_vars <- group_vars(df)
+  } else {
+    group_vars <- NULL
+  }
+  
+  res <- df %>%
+    summarise(across(where(is.numeric), list(
+      stat_mean = ~mean(.x, na.rm = TRUE),
+      stat_sd = ~sd(.x, na.rm = TRUE),
+      stat_se = ~sd(.x, na.rm = TRUE) / sqrt(sum(!is.na(.x))),
+      stat_min = ~min(.x, na.rm = TRUE),
+      stat_max = ~max(.x, na.rm = TRUE),
+      stat_median = ~median(.x, na.rm = TRUE),
+      stat_n = ~NROW(na.omit(.x)),
+      stat_shapiro = ~shapiro.test(na.omit(.x))$statistic,
+      stat_p.value = ~shapiro.test(na.omit(.x))$p.value,
+      stat_missing = ~sum(is.na(.x))
+    ))) %>%
+    mutate(across(where(is.numeric), ~round(.x, digits)))
+  
+  res_long <- res %>%
+    pivot_longer(cols = -all_of(group_vars)) %>%
+    separate(col = name, into = c("var", "stat"), sep = "_stat_") %>%
+    pivot_wider(id_cols = c(all_of(group_vars), var), names_from = stat, values_from = value)
+  
+  return(res_long)
+}
+
+
+
+
+
+
+
+
+
+
+# old versions kept to avoid breaking old scripts
 # note: that this function has some bad coding to be updated in the future
 # to use the function, the dv argument have to be a character vector (accepting multiple variables)
 # the group argument HAVE to be the name of the group variable without quotes.
