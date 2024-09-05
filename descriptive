@@ -1,6 +1,6 @@
 
 
-describedf <- function(df, digits = 3) {
+describedf <- function(df, digits = 2, digitspvalue = 3) {
   if (is_grouped_df(df)) {
     group_vars <- group_vars(df)
   } else {
@@ -19,15 +19,16 @@ describedf <- function(df, digits = 3) {
       stat_shapiro = ~shapiro.test(na.omit(.x))$statistic,
       stat_p.value = ~shapiro.test(na.omit(.x))$p.value,
       stat_missing = ~sum(is.na(.x))
-    )), .groups = "drop") %>% 
-    mutate(across(where(is.numeric), ~round(.x, digits)))
+    )), .groups = "drop")
   
+  # Apply rounding: digits for all columns except p.value, and digitspvalue for p.value
   res_long <- res %>%
     pivot_longer(cols = -all_of(group_vars)) %>%
     separate(col = name, into = c("var", "stat"), sep = "_stat_") %>%
     pivot_wider(id_cols = c(all_of(group_vars), var), names_from = stat, values_from = value) %>%
-    mutate(p.value = case_when(p.value < .001 ~ "< .001", 
-                                    TRUE ~ as.character(round(as.numeric(p.value), 3))))
+    mutate(across(mean:shapiro, ~ round(.x, digits)), # Round other numeric columns
+           p.value = case_when(p.value < .001 ~ "< .001",  # Round p-value separately
+                               TRUE ~ as.character(round(as.numeric(p.value), digitspvalue))))
   
   return(res_long)
 }
