@@ -19,16 +19,19 @@ describedf <- function(df, digits = 3) {
       stat_shapiro = ~shapiro.test(na.omit(.x))$statistic,
       stat_p.value = ~shapiro.test(na.omit(.x))$p.value,
       stat_missing = ~sum(is.na(.x))
-    )), .groups = "drop") %>% # Explicitly set .groups = "drop" to prevent the message
+    )), .groups = "drop") %>% 
     mutate(across(where(is.numeric), ~round(.x, digits)))
   
   res_long <- res %>%
     pivot_longer(cols = -all_of(group_vars)) %>%
     separate(col = name, into = c("var", "stat"), sep = "_stat_") %>%
-    pivot_wider(id_cols = c(all_of(group_vars), var), names_from = stat, values_from = value)
+    pivot_wider(id_cols = c(all_of(group_vars), var), names_from = stat, values_from = value) %>%
+    mutate(p.value = case_when(p.value < .001 ~ "< .001", 
+                                    TRUE ~ as.character(round(as.numeric(p.value), 3))))
   
   return(res_long)
 }
+
 
 
 
