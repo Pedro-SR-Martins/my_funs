@@ -155,3 +155,428 @@ plotTracePoly <- function(fit_model = fit_model,
           legend.frame = element_blank(),
           legend.position="bottom")
 }
+
+
+# Functions for Rasch models!
+
+# Item map based on Primi's functon (http://www.labape.com.br/rprimi/R/utils_construct_maps.R)
+person_item_map_bipolar <- function(
+    
+  item_tresh,                  # thurstone treshold
+  coditem,                     # item unique code
+  item_text,                   # text label of items 
+  
+  item_text2,                   # text label of items 
+  pole,                        # item polarity +:1  -:0
+  theta,                       # subject's theta scores
+  min = -3, 
+  max = 3,
+  step = 1,
+  item_text_max = 28,
+  binwidth = .25,
+  size_categ_label = 4,
+  size_bar = 6,
+  categ_label = c("1", "2", "3", "4", "5"),
+  categ_color = c("#DF4949", "#FBB941","#EEE657", "#2B82C9",  "#2CCA90"),
+  intercept=0,
+  color_hist = "#DF4949",
+  probs = c(.25, .50, .75)
+  
+)       {
+  
+  require(tidyverse)
+  require(stringr)
+  require(gridExtra)
+  require(RColorBrewer)
+  require(tidyr)
+  require(grid)
+  require(forcats)
+  
+  
+  # Prepare reverse category mapping and colors
+  rev_categ_label <- set_names(rev(categ_label), categ_label)
+  categ_color <- set_names(categ_color, categ_label)
+  n_categ <- length(categ_label)
+  
+  # Process dictionary and thresholds
+  dic <- tibble(coditem, item_text, item_text2,pole) %>%
+    mutate(item_text = str_wrap(item_text, item_text_max),
+           item_text2 = str_wrap(item_text2, item_text_max)) %>%
+    bind_cols(as_tibble(item_tresh, .name_repair = ~ categ_label[-1])) %>%
+    rowwise() %>%
+    mutate(b = mean(c_across(all_of(categ_label[-1])), na.rm = TRUE),
+           min = min,  # Assuming min/max are vectors of appropriate length
+           max = max) %>%
+    ungroup() %>%
+    # mutate(item_text = fct_reorder(item_text, b))
+    mutate(item_text = fct_rev(item_text)) # isso aqui é muito importante
+  
+  # Reshape and calculate segment positions
+  items1 <- dic %>%
+    pivot_longer(cols = c(min, max, all_of(categ_label[-1])),
+                 names_to = "variable",
+                 values_to = "start") %>%
+    mutate(variable2 = factor(variable, 
+                              levels = c("min", categ_label[-1], "max"))) %>%
+    arrange(item_text, variable2) %>%
+    group_by(item_text) %>%
+    mutate(end = lead(start),
+           variable2 = fct_recode(variable2, "1" = "min") %>% fct_drop()) %>%
+    ungroup() %>%
+    filter(variable2 != "max") %>%
+    mutate(variable2 = if_else(pole == 0,recode(variable2, !!!rev_categ_label),
+                               as.character(variable2)),
+           variable2 = factor(variable2, levels = categ_label),
+           mid = (start + end)/2)
+  
+  # 1. Build lookup with wrapped labels
+  lookup <- items1 %>%
+    distinct(item_text, item_text2) %>%
+    arrange(item_text) %>%
+    mutate(pos  = row_number(),
+           lab1 = str_wrap(item_text, item_text_max),
+           lab2 = str_wrap(item_text2, item_text_max))
+  
+  # 2. Join back (on the *raw* text columns)
+  items_plot <- items1 %>%
+    left_join(lookup, by = c("item_text", "item_text2"))
+  
+  # 3. Plot on continuous y = pos, then supply wrapped labels in scale()
+  plot1 <- ggplot(items_plot) +
+    geom_segment(aes(y = pos, yend = pos, x = start, xend = end, color = variable2),
+                 linewidth = size_bar) +
+    geom_text(aes(label = variable2, x = mid, y = pos),
+              size = size_categ_label,color = "black") +
+    geom_vline(xintercept = intercept, color = "grey30") +
+    scale_color_manual(labels = categ_label, values = categ_color) +
+    scale_y_continuous(
+      breaks   = lookup$pos,
+      labels   = lookup$lab1,               # wrapped left labels
+      sec.axis = dup_axis(
+        breaks = lookup$pos,
+        labels = lookup$lab2,               # wrapped right labels
+        name   = NULL)) +
+    scale_x_continuous(breaks = seq(min, max, 1), limits = c(min, max)) +
+    theme_minimal() +
+    theme(legend.position = "none",
+          axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.x = element_text(color = "black"),
+          axis.text.y.left = element_text(color = "black", lineheight = 0.9),
+          axis.text.y.right = element_text(color = "black", lineheight = 0.9))
+  
+  theta <- as.data.frame(theta)
+  na.omit(theta)
+  
+  plot2 <- ggplot(data=theta,aes(x=theta))  + 
+    geom_histogram(
+      aes(y=after_stat(density)), 
+      binwidth = binwidth, 
+      colour="white", fill=color_hist ) +
+    
+    scale_x_continuous(breaks=(seq(min, max, step)), limits= c(min, max)) + 
+    
+    geom_vline(xintercept=quantile(x = theta$theta, 
+                                   na.rm = TRUE, probs = probs), 
+               color="red", linetype="dotted", linewidth = 1) +
+    
+    stat_function(
+      fun=dnorm, 
+      args = list(mean = mean(theta$theta, na.rm=TRUE), 
+                  sd = sd(theta$theta, na.rm=TRUE))) +
+    
+    theme_bw() + 
+    
+    theme(
+      axis.text.y = element_blank(),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      axis.text.x = element_text(color = "black")
+      # axis.text.y = element_text(color = "black")
+    ) 
+  grid.newpage()
+  grid.draw(rbind(ggplotGrob(plot1), ggplotGrob(plot2), size = "first"))
+  
+}
+
+
+person_item_map_v3_bw <- function(
+  
+  item_tresh,                  # thurstone treshold
+  coditem,                     # item unique code
+  item_text,                   # text label of items 
+  pole,                        # item polarity +:1  -:0
+  theta,                       # subject's theta scores
+  min = -3, 
+  max = 3,
+  step = 1,
+  item_text_max = 28,
+  binwidth = .25,
+  size_categ_label = 4,
+  size_bar = 6,
+  categ_label = c("1", "2", "3", "4", "5"),
+  categ_color = c("#DF4949", "#FBB941","#EEE657", "#2B82C9",  "#2CCA90"),
+  intercept=0,
+  color_hist = "#DF4949",
+  probs = c(.25, .50, .75)
+  
+)       {
+  
+  require(tidyverse)
+  require(stringr)
+  require(gridExtra)
+  require(RColorBrewer)
+  require(tidyr)
+  require(grid)
+  require(forcats)
+  
+  rev_categ_label =  rev(categ_label)
+  names(rev_categ_label) <- categ_label
+  names(categ_color) <- categ_label
+  
+
+  n_categ = length(categ_label)
+  
+  dic <- tibble(
+    coditem,
+    item_text,
+    pole
+  )
+  
+  dic$item_text <- stringr::str_wrap(dic$item_text, item_text_max)
+  
+  item_tresh <- as.data.frame(item_tresh)
+  names(item_tresh) <- categ_label[2:n_categ]
+  item_tresh$b <- apply(item_tresh, MARGIN = 1, function(x){mean(x, na.rm =TRUE)})
+  
+  dic <- cbind(dic, item_tresh)
+  
+  dic$item_text <- factor(
+    factor(dic$item_text, 
+      levels = dic$item_text[order(dic$b)])
+  )
+  
+  dic$min <- min
+  dic$max <- max
+  
+  
+  items1 <- dic %>% 
+    gather(key = variable, value = start, -coditem, -item_text, -pole, -b )
+   # %>% arrange()
+  
+  items1$variable2 <- factor( 
+    items1$variable, 
+    levels = c("min", categ_label[2:n_categ], "max")
+  )
+  
+  items1 <- items1 %>% 
+    arrange(item_text, variable2) %>%
+    mutate(
+      end = lead(start),
+      variable2 = fct_recode(variable2, `1` = "min")
+    ) %>%
+    filter(variable2 != "max") %>%
+    mutate( variable2 = fct_drop(variable2))
+  
+  items1$variable2 <- 
+    ifelse(items1$pole == 0, 
+      rev_categ_label[items1$variable2], 
+      items1$variable2
+    )
+  
+  items1$variable2 <- factor(items1$variable2, levels = categ_label)
+  
+  
+  items1$mid <- apply(items1[ , c("start", "end")], MARGIN = 1, mean, na.rm=TRUE)
+  
+  
+  plot1 <- ggplot(data =  items1  ) +
+    geom_segment(
+        aes(x = item_text, xend = item_text, y = start, yend = end, 
+          colour = variable2),
+      alpha =.9,
+      size = size_bar
+    ) +
+    
+    geom_text(
+      aes(label=variable2, y = mid, x=item_text),
+      size=size_categ_label, 
+      alpha = .9,
+      color = "black"
+    ) +
+    
+    # geom_point(
+    #   aes( x = item_text , y = b, alpha = .75 ),
+    #   color = "gray", shape = 1
+    # ) +
+    
+    geom_hline(yintercept = intercept, color =c("#646464")) +
+    
+    scale_color_manual(
+      labels = categ_label, 
+      values = categ_color,
+      aesthetics = "colour"
+    ) +
+    theme_minimal() +
+    
+    theme(legend.position="none", 
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+          axis.text.x = element_text(color = "black"),
+          axis.text.y = element_text(color = "black")
+    ) +
+    coord_flip() +
+    scale_y_continuous(breaks=seq(min,max,1), limits=c(min,max))
+  
+  
+  theta <- as.data.frame(theta)
+  na.omit(theta)
+  
+  plot2 <- ggplot(data=theta,aes(x=theta))  + 
+    geom_histogram(
+      aes(y=..density..), 
+      binwidth = binwidth, alpha=.9, 
+      colour="white", fill=color_hist ) +
+    
+    scale_x_continuous(breaks=(seq(min, max, step)), limits= c(min, max)) + 
+    
+    geom_vline(xintercept=quantile(x = theta$theta, 
+      na.rm = TRUE, probs = probs), 
+      color="red", linetype="dotted") +
+    
+    stat_function(
+      fun=dnorm, 
+      args = list(mean = mean(theta$theta, na.rm=TRUE), 
+        sd = sd(theta$theta, na.rm=TRUE))) +
+    
+    theme_bw() + 
+    
+    theme(
+      axis.text.y = element_blank(),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+          axis.text.x = element_text(color = "black")
+          # axis.text.y = element_text(color = "black")
+    ) 
+  
+  grid.newpage()
+  grid.draw(rbind(ggplotGrob(plot1), ggplotGrob(plot2), size = "first"))
+
+}
+
+
+plotcond_rel <- function(fit_model = x,
+                     detail = .1,
+                     min_theta = -6,
+                     max_theta = 6,
+                     breaks_theta = .5){
+  require(mirt)
+  require(tidyverse)
+  Theta <- matrix(seq(min_theta,max_theta, by = detail))
+  info_vals <- testinfo(fit_model,
+                          Theta = matrix(seq(min_theta,max_theta, 
+                                             by = detail)))
+  # Compute conditional reliability
+  cond_reliability <- info_vals / (info_vals + 1)
+  reliability_df <- data.frame(
+    theta = Theta,
+    information = info_vals,
+    reliability = cond_reliability)
+  
+  # Optional: plot the conditional reliability
+  p1 <- ggplot(reliability_df, aes(x = theta, y = reliability)) +
+    geom_line(color = "black", linewidth = 1) +
+    scale_x_continuous(breaks = seq(from = min_theta, 
+                                    to = max_theta, 
+                                    by = breaks_theta))+
+    scale_y_continuous(limits = c(0, 1), breaks = seq(from = 0, 
+                                                      to = 1, 
+                                                      by = .1))+
+    geom_hline(yintercept = .7, color = "gray30", linetype = "dashed")+
+    labs(x = expression(theta),
+         y = "Conditional reliability") +
+    theme(axis.text.x = element_text(colour="black",size=12),
+          text = element_text(size=16, family = "serif"),
+          panel.background = element_blank(), 
+          legend.key = element_rect(fill = "white"),
+          legend.position = "bottom",
+          axis.line = element_line(colour = "black"),
+          strip.background = element_rect(colour="black", fill="white"),
+          axis.text.y = element_text(colour="black",size=12))
+  
+  output <- list(plot = p1, Reliability_values = reliability_df)
+  return(output)
+}
+
+plotcond_rel_hist <- function(totalscores = totalscores,
+  raschmod = raschmod,
+  histcolor = "darkolivegreen3",
+  colorcondrel = "red",
+  alphahist = 1,
+  maxnhist = 100){
+  #bind total scores with theta scores
+  ttscores <- cbind(totalscores,
+                    fscores(raschmod, full.scores.SE = TRUE)) %>% data.frame() %>% tibble() %>% 
+    mutate(F1 = round(F1,2)) %>% rename(total = "totalscores")
+  #generate cond rel for theoretical thetas
+  thetascores <- plotcond_rel(rasch_modneu, detail = 0.01, 
+                              min_theta = -3, max_theta = 3)$Reliability_values %>%tibble() %>% 
+    rename(F1 = theta) %>% 
+    mutate(F1 = round(F1,2)) %>% 
+    filter(F1>=min(ttscores$F1),F1<=max(ttscores$F1)) %>% arrange(F1)
+  
+  # Compute histogram manually
+  hist_data <- ttscores %>%
+    count(total) %>%
+    mutate(scaled_n = n / max(n))  # rescale to 0–1 for plotting on same axis
+  # Join datas
+  plot_data <- left_join(hist_data, ttscores) %>% left_join(., thetascores)
+  
+  # generate limits
+  primaryaxis <- c(0, maxnhist)
+  secondaryaxis <- c(0,1)
+  p1 <- ggplot() +
+    # Histogram bars: only where scaled_n is not NA
+    geom_col(data = filter(plot_data, !is.na(scaled_n)),
+             aes(x = total, y = scaled_n),
+             fill = histcolor, alpha = alphahist) +
+    
+    # Reliability line (use full data)
+    geom_line(data = plot_data,
+              aes(x = total, y = scales::rescale(reliability, from = secondaryaxis, to = primaryaxis) ),
+              color = colorcondrel, linewidth = 1) +
+    
+    geom_hline(yintercept = scales::rescale(.7, from = secondaryaxis, to = primaryaxis), color = "gray30", linetype = "dashed") +
+    
+    scale_x_continuous(
+      breaks = seq(min(ttscores$total), max(ttscores$total), by = 1),
+      expand = c(0.005, 0.005)
+    ) +
+    
+    scale_y_continuous(expand = c(0.025, 0.025),
+                       name = "Frequency",
+                       sec.axis = sec_axis(
+                         trans = ~ scales::rescale(., from = primaryaxis, to = secondaryaxis),  # rescales back to count
+                         name = "Conditional reliability",
+                         breaks = seq(from = 0, 
+                                      to = 1.1, 
+                                      by = .1)
+                       ),
+    ) +
+    theme(axis.text.x = element_text(colour="black",size=12),
+          text = element_text(size=16, family = "serif"),
+          panel.grid.major = element_line(linewidth = 0.005,
+                                          linetype = 'solid',
+                                          colour = "lightgrey"),
+          # panel.grid.minor = element_line(linewidth = 0.05,
+          #                                 linetype = 'solid',
+          #                                 colour = "lightgrey"),
+          panel.background = element_blank(), 
+          legend.key = element_rect(fill = "white"),
+          legend.position = "bottom",
+          axis.line = element_line(colour = "black"),
+          strip.background = element_rect(colour="black", fill="white"),
+          axis.text.y = element_text(colour="black",size=12),
+          axis.title.y.right = element_text(color = colorcondrel,size=16))
+  return(p1)
+}
