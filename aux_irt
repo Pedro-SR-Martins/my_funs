@@ -556,7 +556,7 @@ plotcond_rel_hist <- function(totalscores = totalscores,
     scale_y_continuous(expand = c(0.025, 0.025),
                        name = "Frequency",
                        sec.axis = sec_axis(
-                         trans = ~ scales::rescale(., from = primaryaxis, to = secondaryaxis),  # rescales back to count
+                         transform = ~ scales::rescale(., from = primaryaxis, to = secondaryaxis),  # rescales back to count
                          name = "Conditional reliability",
                          breaks = seq(from = 0, 
                                       to = 1.1, 
