@@ -394,14 +394,14 @@ person_item_map_v3_bw <- function(
     geom_segment(
         aes(x = item_text, xend = item_text, y = start, yend = end, 
           colour = variable2),
-      alpha =.9,
+      #alpha =.9,
       size = size_bar
     ) +
     
     geom_text(
       aes(label=variable2, y = mid, x=item_text),
       size=size_categ_label, 
-      alpha = .9,
+      #alpha = .9,
       color = "black"
     ) +
     
@@ -435,7 +435,7 @@ person_item_map_v3_bw <- function(
   plot2 <- ggplot(data=theta,aes(x=theta))  + 
     geom_histogram(
       aes(y=..density..), 
-      binwidth = binwidth, alpha=.9, 
+      binwidth = binwidth, #alpha=.9, 
       colour="white", fill=color_hist ) +
     
     scale_x_continuous(breaks=(seq(min, max, step)), limits= c(min, max)) + 
