@@ -519,7 +519,7 @@ plotcond_rel_hist <- function(totalscores = totalscores,
                     fscores(raschmod, full.scores.SE = TRUE)) %>% data.frame() %>% tibble() %>% 
     mutate(F1 = round(F1,2)) %>% rename(total = "totalscores")
   #generate cond rel for theoretical thetas
-  thetascores <- plotcond_rel(rasch_modneu, detail = 0.01, 
+  thetascores <- plotcond_rel(raschmod, detail = 0.01, 
                               min_theta = -3, max_theta = 3)$Reliability_values %>%tibble() %>% 
     rename(F1 = theta) %>% 
     mutate(F1 = round(F1,2)) %>% 
